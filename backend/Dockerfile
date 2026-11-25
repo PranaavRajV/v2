@@ -1,5 +1,13 @@
 # ── DermaCLIP Backend ─────────────────────────────────────────────────────
-# Multi-stage Docker build: keeps the final image lean.
+# The model file (best_macro_f1.pt) is NOT committed to git (153 MB).
+# It is downloaded at Docker build time from MODEL_DOWNLOAD_URL.
+#
+# How to set MODEL_DOWNLOAD_URL:
+#   1. Upload best_macro_f1.pt to Google Drive → Share → "Anyone with link"
+#      Then convert the share URL to a direct download URL:
+#      https://drive.usercontent.google.com/download?id=FILE_ID&export=download&confirm=t
+#   2. Or upload to Hugging Face Hub and use the raw file URL.
+#   3. Or set MODEL_DOWNLOAD_URL as a build arg in Render/Railway dashboard.
 # ---------------------------------------------------------------------------
 
 FROM python:3.11-slim AS base
@@ -10,9 +18,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system deps needed by Pillow / torch
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
+        libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 curl \
     && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------------------------------------------------------
@@ -24,14 +31,18 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 FROM deps AS runtime
 WORKDIR /app
 
-# Copy backend source
 COPY . .
 
-# Model file is expected at /app/best_macro_f1.pt
-# On Render/Railway you can mount it via a persistent disk or bake it in.
-# To bake it in (larger image), uncomment the COPY line below and place the
-# .pt file next to this Dockerfile before building.
-# COPY best_macro_f1.pt /app/best_macro_f1.pt
+# Download model at build time.
+# Pass MODEL_DOWNLOAD_URL as a Docker build arg in Render/Railway.
+ARG MODEL_DOWNLOAD_URL=""
+RUN if [ -n "$MODEL_DOWNLOAD_URL" ]; then \
+        echo "Downloading model from $MODEL_DOWNLOAD_URL …"; \
+        curl -L "$MODEL_DOWNLOAD_URL" -o /app/best_macro_f1.pt; \
+        echo "Model downloaded: $(du -sh /app/best_macro_f1.pt)"; \
+    else \
+        echo "⚠ MODEL_DOWNLOAD_URL not set — model must be mounted at runtime"; \
+    fi
 
 ENV MODEL_PATH=/app/best_macro_f1.pt
 ENV PORT=8081

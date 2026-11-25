@@ -97,6 +97,19 @@ class SkinClassifier:
     def load(self, checkpoint_path: Path) -> None:
         from lora_fused_qkv import apply_fused_qkv_lora  # exact same module used at training time
 
+        if not checkpoint_path.exists():
+            download_url = os.environ.get("MODEL_DOWNLOAD_URL", "").strip()
+            if download_url:
+                import urllib.request
+                log.info("Checkpoint not found at %s; downloading from MODEL_DOWNLOAD_URL …", checkpoint_path)
+                checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+                urllib.request.urlretrieve(download_url, checkpoint_path)
+                log.info("Downloaded checkpoint to %s", checkpoint_path)
+            else:
+                raise FileNotFoundError(
+                    f"Model checkpoint not found at {checkpoint_path} and MODEL_DOWNLOAD_URL is not set."
+                )
+
         log.info("Loading checkpoint %s on %s …", checkpoint_path, DEVICE_STR)
         ckpt = torch.load(checkpoint_path, map_location=DEVICE, weights_only=False)
 

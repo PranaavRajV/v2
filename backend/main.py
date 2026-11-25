@@ -109,9 +109,9 @@ class SkinClassifier:
             if download_url:
                 log.info("Downloading checkpoint to %s from MODEL_DOWNLOAD_URL …", checkpoint_path)
                 checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
-                if "drive.google.com" in download_url or "drive.usercontent.google.com" in download_url:
+                if "drive.google.com" in download_url:
                     import gdown
-                    gdown.download(download_url, str(checkpoint_path), quiet=False, fuzzy=True)
+                    gdown.download(download_url, str(checkpoint_path), quiet=False)
                 else:
                     import urllib.request
                     urllib.request.urlretrieve(download_url, checkpoint_path)

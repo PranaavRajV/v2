@@ -36,15 +36,17 @@ COPY . .
 # Download model at build time.
 # Pass MODEL_DOWNLOAD_URL as a Docker build arg in Render/Railway (defaults to hosted checkpoint).
 ARG MODEL_DOWNLOAD_URL="https://drive.usercontent.google.com/download?id=1sd8QNsqvKoeihHgGLHudcCFAlNZefB3C&export=download&confirm=t"
-RUN if [ -n "$MODEL_DOWNLOAD_URL" ]; then \
+RUN set -e; if [ -n "$MODEL_DOWNLOAD_URL" ]; then \
         echo "Downloading model from $MODEL_DOWNLOAD_URL …"; \
         case "$MODEL_DOWNLOAD_URL" in \
-            *drive.google.com*|*drive.usercontent.google.com*) \
-                gdown --fuzzy "$MODEL_DOWNLOAD_URL" -O /app/best_macro_f1.pt ;; \
+            *drive.usercontent.google.com*) \
+                curl -fL "$MODEL_DOWNLOAD_URL" -o /app/best_macro_f1.pt ;; \
+            *drive.google.com*) \
+                gdown "$MODEL_DOWNLOAD_URL" -O /app/best_macro_f1.pt ;; \
             *) \
                 curl -fL "$MODEL_DOWNLOAD_URL" -o /app/best_macro_f1.pt ;; \
         esac; \
-        python -c "p='/app/best_macro_f1.pt'; h=open(p,'rb').read(4); assert not h.startswith(b'<'), f'Downloaded HTML instead of checkpoint: {h}'; print('Model verified:', h)" ; \
+        python -c "p='/app/best_macro_f1.pt'; h=open(p,'rb').read(4); assert h.startswith(b'PK'), f'Invalid checkpoint header: {h}'; print('Model verified:', h)" ; \
         echo "Model downloaded: $(du -sh /app/best_macro_f1.pt)"; \
     else \
         echo "⚠ MODEL_DOWNLOAD_URL not set — model must be mounted at runtime"; \

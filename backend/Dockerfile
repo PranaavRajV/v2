@@ -25,13 +25,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ---------------------------------------------------------------------------
 FROM base AS deps
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Install CPU-only PyTorch first to avoid ~3 GB of unused CUDA/NVIDIA packages
+RUN pip install --upgrade pip && \
+    pip install --index-url https://download.pytorch.org/whl/cpu torch>=2.2.0 torchvision>=0.17.0 && \
+    pip install -r requirements.txt
 
 # ---------------------------------------------------------------------------
 FROM deps AS runtime
 WORKDIR /app
 
 COPY . .
+
+# Pre-cache OpenCLIP ViT-L-14-quickgelu weights at build time so container startup is fast
+RUN python -c "import open_clip; open_clip.create_model_and_transforms('ViT-L-14-quickgelu', pretrained='openai')"
 
 # Download model at build time.
 # Pass MODEL_DOWNLOAD_URL as a Docker build arg in Render/Railway (defaults to hosted checkpoint).

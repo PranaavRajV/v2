@@ -141,8 +141,11 @@ class SkinClassifier:
         # Inject LoRA adapters — MUST match training exactly
         apply_fused_qkv_lora(model, rank=lora_rank, alpha=lora_alpha)
 
-        # Load checkpoint weights
+        # Load checkpoint weights and free checkpoint dict immediately to reduce peak RAM
         missing, unexpected = model.load_state_dict(ckpt["model_state_dict"], strict=False)
+        del ckpt
+        import gc
+        gc.collect()
         if missing:
             log.warning("Missing state_dict keys (%d): %s …", len(missing), missing[:5])
         if unexpected:

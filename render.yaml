@@ -1,0 +1,58 @@
+# Render.com deployment config
+# Docs: https://render.com/docs/yaml-spec
+#
+# Two services:
+#   1. dermaclip-api  — FastAPI backend (Python)
+#   2. dermaclip-ui   — React/Vite static site
+# ---------------------------------------------------------------------------
+
+services:
+  # --------------------------------------------------------------------------
+  # Backend — FastAPI
+  # --------------------------------------------------------------------------
+  - type: web
+    name: dermaclip-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+
+    # Render's free tier spins down after inactivity; upgrade to Basic to keep
+    # the model warm. The 150 MB model loads ~15 s on cold start.
+    plan: starter          # or "standard" for always-on
+
+    envVars:
+      - key: PORT
+        value: "8081"
+      - key: MODEL_PATH
+        value: "/app/best_macro_f1.pt"
+
+    # If you use a Render Disk to store the model file:
+    # disk:
+    #   name: model-disk
+    #   mountPath: /app
+    #   sizeGB: 2
+
+    healthCheckPath: /health
+
+  # --------------------------------------------------------------------------
+  # Frontend — React/Vite (static site)
+  # --------------------------------------------------------------------------
+  - type: web
+    name: dermaclip-ui
+    runtime: static
+    rootDir: skin-analyser-ui
+
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+
+    # Rewrite all paths → index.html for SPA routing
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+    envVars:
+      # Set this to your backend's Render URL after first deploy, e.g.:
+      # https://dermaclip-api.onrender.com
+      - key: VITE_API_BASE
+        sync: false          # you'll fill this in the Render dashboard

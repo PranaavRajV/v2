@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#121012" />
+  <title>DermaCLIP Mirror v2 — Imersive AI Mirror Experience</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪞</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --font-main: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-display: "Space Grotesk", var(--font-main);
+      --bg: #0d0a0c;
+      --ivory: #F8F1F6;
+      --muted: #A396A0;
+      --panel-bg: rgba(26, 20, 24, 0.62);
+      --panel-border: rgba(248, 241, 246, 0.16);
+
+      /* 5 Distinct Condition Clinical Neon Colors */
+      --c-acne: #FF2036;
+      --glow-acne: rgba(255, 32, 54, 0.65);
+      --c-wrinkles: #00D5FF;
+      --glow-wrinkles: rgba(0, 213, 255, 0.65);
+      --c-pigment: #FFA000;
+      --glow-pigment: rgba(255, 160, 0, 0.65);
+      --c-dark: #E040FB;
+      --glow-dark: rgba(224, 64, 251, 0.65);
+      --c-pores: #00FF7F;
+      --glow-pores: rgba(0, 255, 127, 0.65);
+
+      --c-mint: #4EEDB2;
+      --c-rose: #F2A4C0;
+      --c-aura: #D8B4FE;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%; margin: 0;
+      overflow: hidden; background: var(--bg);
+      font-family: var(--font-main); color: var(--ivory);
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+    #mirror-container {
+      position: relative; width: 100vw; height: 100vh;
+      overflow: hidden; isolation: isolate;
+      background: radial-gradient(ellipse at 50% 45%, #221a20 0%, #140f13 50%, #090708 100%);
+    }
+
+    /* ===== CAMERA LAYER & MIRROR VIGNETTE ===== */
+    #camera-feed {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; transform: scaleX(-1);
+      opacity: 0; transition: opacity .6s ease;
+      z-index: 1;
+    }
+    #camera-feed.active { opacity: .92; }
+
+    .mirror-ambient-frame {
+      position: absolute; inset: 0; pointer-events: none; z-index: 2;
+      box-shadow: inset 0 0 100px rgba(242,164,192,0.08), inset 0 0 30px rgba(0,0,0,0.8);
+      background:
+        radial-gradient(ellipse at 50% 50%, transparent 48%, rgba(8,6,8,.58) 100%),
+        linear-gradient(180deg, rgba(8,6,8,.75) 0%, transparent 16%, transparent 84%, rgba(8,6,8,.9) 100%);
+    }
+
+    /* ===== TOP BAR & IMERSIVE JOURNEY TRACKER ===== */
+    #top-bar {
+      position: absolute; top: 18px; left: 32px; right: 32px;
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 10;
+    }
+    .brand-section {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 19px; font-weight: 700; letter-spacing: -.02em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .brand-title span { color: var(--c-rose); font-weight: 400; font-size: 14px; }
+    .badge-v2 {
+      font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 6px;
+      background: linear-gradient(135deg, rgba(216,180,254,.3), rgba(242,164,192,.3));
+      border: 1px solid rgba(255,255,255,.2); color: #fff; text-transform: uppercase;
+    }
+
+    /* Imersive 4-Stage Mirror Journey */
+    .journey-tracker {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(22, 16, 20, 0.72); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 30px; padding: 5px 16px; backdrop-filter: blur(14px);
+    }
+    .journey-step {
+      display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600;
+      color: var(--muted); opacity: 0.6; transition: all .3s ease;
+    }
+    .journey-step.active {
+      color: var(--c-mint); opacity: 1; text-shadow: 0 0 10px rgba(78,237,178,.4);
+    }
+    .journey-step.done {
+      color: var(--c-rose); opacity: 0.9;
+    }
+    .step-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+    }
+    .journey-sep {
+      color: rgba(255,255,255,0.2); font-size: 10px;
+    }
+
+    .top-right-tools {
+      display: flex; align-items: center; gap: 12px;
+    }
+    #live-clock {
+      font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums;
+      color: var(--ivory);
+    }
+
+    /* Mode Toggle: HUD vs Pure Mirror */
+    .btn-view-toggle {
+      display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+      border-radius: 20px; font-size: 11px; font-weight: 600;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18);
+      color: var(--ivory); backdrop-filter: blur(10px); transition: all .2s;
+    }
+    .btn-view-toggle:hover {
+      background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.3);
+    }
+    .btn-view-toggle.active {
+      background: rgba(242,164,192,0.22); border-color: rgba(242,164,192,0.5); color: var(--c-rose);
+    }
+
+    /* ===== AURA: INTERACTIVE AI VIRTUAL ASSISTANT ===== */
+    #aura-assistant-container {
+      position: absolute; top: 76px; left: 50%; transform: translateX(-50%);
+      z-index: 15; display: flex; flex-direction: column; align-items: center;
+      transition: all .4s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .aura-pod {
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 7px 18px 7px 10px; border-radius: 36px;
+      background: rgba(26, 19, 25, 0.82);
+      border: 1px solid rgba(216, 180, 254, 0.3);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4), 0 0 24px rgba(216, 180, 254, 0.15);
+      pointer-events: auto; cursor: pointer;
+      transition: all .25s ease;
+    }
+    .aura-pod:hover {
+      border-color: rgba(216, 180, 254, 0.6);
+      box-shadow: 0 10px 36px rgba(0,0,0,0.5), 0 0 32px rgba(216, 180, 254, 0.25);
+    }
+
+    /* BSquare Avatar Character Squircle with Responsive Pupils */
+    .aura-avatar {
+      width: 38px; height: 38px; border-radius: 9px;
+      background: radial-gradient(circle at 35% 35%, #fff 0%, #D8B4FE 45%, #7C3AED 100%);
+      position: relative; overflow: hidden; flex-shrink: 0;
+      box-shadow: 0 0 16px rgba(216, 180, 254, 0.5), inset 0 0 8px rgba(255,255,255,0.6);
+      animation: auraFloat 4s ease-in-out infinite;
+    }
+    @keyframes auraFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-2px) scale(1.03); }
+    }
+    .aura-eyes {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: transform .15s ease;
+    }
+    .aura-eye {
+      width: 5px; height: 9px; border-radius: 4px; background: #1E1035;
+      position: relative; animation: auraBlink 5s infinite;
+    }
+    .aura-eye::after {
+      content: ""; position: absolute; top: 1px; left: 1px; width: 2px; height: 2px;
+      border-radius: 50%; background: #fff;
+    }
+    @keyframes auraBlink {
+      0%, 96%, 100% { transform: scaleY(1); }
+      98% { transform: scaleY(0.1); }
+    }
+
+    .aura-text-wrap {
+      display: flex; flex-direction: column; text-align: left;
+    }
+    .aura-name-row {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .aura-name {
+      font-size: 11px; font-weight: 700; color: var(--c-aura); letter-spacing: .02em;
+    }
+    .aura-status-dot {
+      width: 5px; height: 5px; border-radius: 50%; background: var(--c-mint);
+      box-shadow: 0 0 6px var(--c-mint); animation: pulseDot 1.8s infinite;
+    }
+    @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .aura-dialogue {
+      font-size: 12.5px; font-weight: 500; color: var(--ivory);
+      max-width: clamp(280px, 40vw, 520px);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      transition: color .2s;
+    }
+
+    /* ===== NO FACE VISIBLE NOTICE (PERFECTLY CENTERED, ZERO OVERLAP) ===== */
+    #no-face-notice {
+      position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+      display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      padding: 18px 28px; border-radius: 20px;
+      background: rgba(28, 16, 22, 0.90);
+      border: 1px solid rgba(255, 120, 140, 0.45);
+      color: #ffb8c2;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 30px rgba(255, 80, 100, 0.22);
+      z-index: 25;
+      text-align: center;
+      animation: noticePulse 2.4s infinite ease-in-out;
+      pointer-events: none;
+    }
+    @keyframes noticePulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.025); }
+    }
+    .notice-icon-circle {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: rgba(255, 80, 100, 0.15); border: 1.5px dashed rgba(255, 120, 140, 0.65);
+      display: grid; place-items: center; color: #ff8c9c;
+    }
+    .notice-title {
+      font-size: 13.5px; font-weight: 700; color: #fff; letter-spacing: -0.01em; margin: 0 0 3px;
+    }
+    .notice-desc {
+      font-size: 11px; font-weight: 500; color: #e8b0ba; margin: 0;
+    }
+
+    /* ===== LIVE FACIAL MESH & 15 CONDITION POINTS ===== */
+    #face-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      transform: scaleX(-1); transform-origin: center;
+      pointer-events: none; z-index: 4; overflow: visible;
+      display: none;
+    }
+    .mesh-subtle line {
+      stroke: #86e4c0; stroke-width: 0.9; opacity: 0.12;
+    }
+    #condition-points-layer {
+      transition: opacity .35s ease;
+    }
+
+    /* Connector HUD lines */
+    #connector-svg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 5; overflow: visible;
+      transition: opacity .35s ease;
+    }
+    .hud-line {
+      stroke-width: 1.5; stroke-dasharray: 4, 3; opacity: 0.85;
+      animation: dashflow 10s linear infinite;
+    }
+    @keyframes dashflow { to { stroke-dashoffset: -100; } }
+
+    /* Active Spotlighting Ring on Face */
+    .spotlight-ring {
+      animation: pulseSpotlight 1.8s infinite;
+    }
+    @keyframes pulseSpotlight {
+      0% { r: 16; stroke-opacity: 0.9; }
+      50% { r: 24; stroke-opacity: 0.3; }
+      100% { r: 16; stroke-opacity: 0.9; }
+    }
+
+    /* ===== GLASS PANELS & CARDS ===== */
+    .glass-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      backdrop-filter: blur(20px) saturate(130%);
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .4s ease, transform .4s ease, border-color .2s ease, box-shadow .2s ease;
+      pointer-events: none;
+    }
+    .camera-active .glass-card {
+      opacity: 1; transform: translateY(0); pointer-events: auto;
+    }
+
+    /* ===== LEFT RAIL: 5 CONDITIONS WITH INTERACTIVE FOCUS ===== */
+    #left-panel {
+      position: absolute; left: 32px; top: 120px; bottom: 42px;
+      width: clamp(235px, 19vw, 285px);
+      display: flex; flex-direction: column; justify-content: space-between;
+      z-index: 10;
+    }
+    .condition-card {
+      padding: 12px 14px; position: relative; cursor: pointer;
+      user-select: none; transition: all .22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .condition-card:hover {
+      transform: translateX(4px);
+      border-color: rgba(255,255,255,0.35);
+      background: rgba(35, 27, 33, 0.75);
+    }
+    .condition-card.active-focus {
+      border-color: #fff !important;
+      background: rgba(44, 32, 41, 0.9) !important;
+      box-shadow: 0 0 25px currentColor, 0 12px 35px rgba(0,0,0,0.5);
+      transform: translateX(6px) scale(1.02);
+    }
+    .condition-card.dimmed {
+      opacity: 0.35; transform: scale(0.98);
+    }
+
+    .cond-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;
+    }
+    .cond-label {
+      font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px;
+    }
+    .cond-indicator {
+      width: 9px; height: 9px; border-radius: 50%; display: inline-block;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .cond-value {
+      font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums;
+    }
+    .cond-footer {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .cond-note {
+      font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 155px;
+    }
+    .cond-badge {
+      font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+      text-transform: uppercase; letter-spacing: .02em;
+    }
+    .card-anchor {
+      position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
+      width: 7px; height: 7px; border-radius: 50%;
+    }
+
+    /* Focus Reset Pill */
+    #focus-reset-bar {
+      margin-top: 6px; text-align: center; display: none;
+    }
+    .btn-reset-focus {
+      padding: 5px 12px; border-radius: 12px; font-size: 10.5px; font-weight: 600;
+      color: var(--ivory); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+      transition: all .2s;
+    }
+    .btn-reset-focus:hover { background: rgba(255,255,255,0.18); }
+
+    /* ===== RIGHT RAIL: SUMMARY & CLINICAL SUGGESTIONS ===== */
+    #right-panel {
+      position: absolute; right: 32px; top: 120px; bottom: 42px;
+      width: clamp(250px, 21vw, 310px);
+      display: flex; flex-direction: column; gap: 12px;
+      z-index: 10;
+    }
+    .health-gauge-card {
+      padding: 16px 14px 12px; text-align: center;
+    }
+    .card-title-row {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+    .card-title {
+      font-size: 11.5px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--muted); margin: 0;
+    }
+
+    #score-ring {
+      --score-deg: 0deg;
+      width: 94px; height: 94px; margin: 0 auto 8px;
+      border-radius: 50%; padding: 5px;
+      background: conic-gradient(
+        from -90deg,
+        var(--c-pores) 0deg,
+        #F5E0A3 120deg,
+        var(--c-mint) var(--score-deg),
+        rgba(255,255,255,.08) var(--score-deg) 360deg
+      );
+      position: relative;
+      filter: drop-shadow(0 0 12px rgba(78,237,178,.25));
+      transition: all .7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #score-ring::after {
+      content: ""; position: absolute; inset: 0;
+      border-radius: 50%; border: 1px solid rgba(255,255,255,.14);
+    }
+    .score-inner {
+      width: 100%; height: 100%; border-radius: 50%;
+      background: #1c151a;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    #score-number {
+      font-size: 29px; font-weight: 800; line-height: 1; letter-spacing: -.03em;
+    }
+    .score-denom { font-size: 9.5px; color: var(--muted); }
+
+    #health-label {
+      font-size: 11.5px; font-weight: 600; color: var(--c-mint);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* Diagnostic Profile */
+    .profile-card {
+      padding: 10px 14px;
+    }
+    .profile-row {
+      display: flex; justify-content: space-between; font-size: 11px; padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .profile-row:last-child { border-bottom: none; }
+    .p-label { color: var(--muted); }
+    .p-val { font-weight: 600; color: var(--ivory); }
+
+    /* Clinical Suggestions Card */
+    .recommendations-card {
+      padding: 12px 14px; flex: 1; min-height: 0;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .rec-pill-live {
+      font-size: 8.5px; font-weight: 700; letter-spacing: .05em; padding: 2px 7px;
+      border-radius: 10px; background: rgba(78,237,178,.15); color: var(--c-mint);
+      border: 1px solid rgba(78,237,178,.3);
+    }
+    .recommendation-list {
+      display: flex; flex-direction: column; gap: 7px;
+      overflow-y: auto; flex: 1; padding-right: 3px;
+    }
+    .recommendation-list::-webkit-scrollbar { width: 4px; }
+    .recommendation-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 4px; }
+
+    .rec-item {
+      display: flex; align-items: center; gap: 10px; padding: 7px 9px;
+      background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 11px; transition: background .18s ease, transform .18s ease;
+    }
+    .rec-item:hover {
+      background: rgba(255,255,255,0.07); transform: translateX(2px);
+    }
+    .rec-icon-box {
+      width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+      flex-shrink: 0; background: linear-gradient(135deg, rgba(242,164,192,.22), rgba(255,255,255,.05));
+      border: 1px solid rgba(242,164,192,.35); color: var(--c-rose); font-size: 13px;
+    }
+    .rec-info {
+      display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;
+    }
+    .rec-name-row {
+      display: flex; justify-content: space-between; align-items: center; gap: 4px;
+    }
+    .rec-name {
+      font-size: 11.5px; font-weight: 600; color: var(--ivory);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .rec-timing {
+      font-size: 8.5px; font-weight: 700; padding: 1px 5px; border-radius: 6px;
+      background: rgba(242,164,192,.18); color: var(--c-rose); flex-shrink: 0;
+    }
+    .rec-active {
+      font-size: 10px; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .rec-placeholder {
+      font-size: 11px; color: var(--muted); text-align: center; padding: 24px 0;
+    }
+
+    .btn-open-protocol {
+      margin-top: 9px; width: 100%; padding: 8px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(242,164,192,.25), rgba(255,255,255,.05));
+      border: 1px solid rgba(242,164,192,.38); color: var(--ivory);
+      font-size: 11.5px; font-weight: 600; display: flex; align-items: center;
+      justify-content: center; gap: 7px; cursor: pointer; transition: all .2s;
+    }
+    .btn-open-protocol:hover {
+      background: rgba(242,164,192,.4); transform: translateY(-1px);
+    }
+
+    /* Stop Camera Button */
+    #btn-stop-camera {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      padding: 8px 18px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      color: var(--muted); background: rgba(25,20,24,.85);
+      border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(10px);
+      display: none; align-items: center; gap: 7px; z-index: 10;
+      transition: all .2s;
+    }
+    #btn-stop-camera:hover { color: #f87171; border-color: #f87171; }
+
+    /* ===== STANDBY SCREEN (LUXURY MIRROR PROMPT) ===== */
+    #standby-screen {
+      position: absolute; inset: 0; z-index: 8;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 20px;
+      background: radial-gradient(ellipse at 50% 45%, rgba(46,34,42,.85), rgba(14,10,13,.97));
+      transition: opacity .5s ease;
+    }
+    #standby-screen.hidden { opacity: 0; pointer-events: none; }
+
+    .standby-avatar-orb {
+      width: 96px; height: 96px; border-radius: 20px;
+      background: radial-gradient(circle at 35% 35%, #fff 0%, #D8B4FE 40%, #7C3AED 90%);
+      display: grid; place-items: center; color: #fff;
+      box-shadow: 0 0 45px rgba(216, 180, 254, 0.4), inset 0 0 20px rgba(255,255,255,0.7);
+      margin-bottom: 24px; cursor: pointer;
+      animation: standbyPulse 4s ease-in-out infinite;
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    @keyframes standbyPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 45px rgba(216, 180, 254, 0.4); }
+      50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(216, 180, 254, 0.6); }
+    }
+    .standby-avatar-orb:hover {
+      transform: scale(1.08); box-shadow: 0 0 70px rgba(216, 180, 254, 0.7);
+    }
+    .standby-head {
+      font-family: var(--font-display);
+      font-size: 28px; font-weight: 700; letter-spacing: -.02em; margin: 0 0 8px;
+    }
+    .standby-desc {
+      font-size: 14px; color: var(--muted); margin: 0 0 26px; max-width: 400px; line-height: 1.5;
+    }
+    .btn-start-action {
+      padding: 13px 30px; border-radius: 30px; font-size: 14px; font-weight: 600;
+      color: var(--ivory);
+      background: linear-gradient(135deg, rgba(216,180,254,.35), rgba(242,164,192,.35));
+      border: 1px solid rgba(255,255,255,.35); backdrop-filter: blur(14px);
+      box-shadow: 0 10px 28px rgba(0,0,0,.4);
+      display: inline-flex; align-items: center; gap: 9px;
+      transition: all .2s ease;
+    }
+    .btn-start-action:hover {
+      background: rgba(216,180,254,.5); transform: translateY(-1px);
+    }
+
+    /* ===== CLINICAL PROTOCOL MODAL ===== */
+    #routine-backdrop {
+      position: fixed; inset: 0; background: rgba(10,8,10,.74);
+      backdrop-filter: blur(8px); z-index: 99; display: none;
+    }
+    #routine-backdrop.open { display: block; }
+    #routine-popover {
+      position: fixed; inset: 0; margin: auto;
+      width: min(660px, 92vw); height: min(640px, 86vh);
+      z-index: 100; border-radius: 20px; padding: 24px 26px;
+      display: none; flex-direction: column;
+      background: rgba(26, 20, 24, 0.94);
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow: 0 24px 60px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.16);
+      backdrop-filter: blur(30px);
+    }
+    #routine-popover.open {
+      display: flex; animation: modalPop .24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(.95) translateY(12px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .routine-modal-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 14px;
+    }
+    .routine-modal-header h3 {
+      margin: 0 0 4px; font-size: 18px; font-weight: 700; color: var(--ivory);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .routine-subtitle { margin: 0; font-size: 12px; color: var(--muted); }
+    .routine-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+      color: var(--ivory); font-size: 18px; line-height: 1;
+      display: grid; place-items: center; cursor: pointer; transition: all .2s;
+    }
+    .routine-close:hover { background: rgba(255,255,255,.2); transform: rotate(90deg); }
+    .routine-modal-body {
+      flex: 1; overflow-y: auto; padding-right: 8px;
+      font-size: 12.5px; line-height: 1.6; color: rgba(248,241,246,.92);
+    }
+    .protocol-section {
+      background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
+    }
+    .protocol-section h4 {
+      margin: 0 0 8px; font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--c-rose); display: flex; align-items: center; gap: 7px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="mirror-container">
+
+  <!-- ==================== TOP BAR & JOURNEY TRACKER ==================== -->
+  <header id="top-bar">
+    <div class="brand-section">
+      <div class="brand-title">
+        DermaCLIP <span>Mirror</span>
+      </div>
+      <span class="badge-v2">BSQUARE AI</span>
+    </div>
+
+    <!-- Imersive 4-Step Mirror Flow Tracker -->
+    <div class="journey-tracker">
+      <div class="journey-step active" id="step-perceive">
+        <span class="step-dot"></span>
+        <span>Perception</span>
+      </div>
+      <span class="journey-sep">›</span>
+      <div class="journey-step" id="step-scan">
+        <span class="step-dot"></span>
+        <span>Scan</span>
+      </div>
+      <span class="journey-sep">›</span>
+      <div class="journey-step" id="step-mapping">
+        <span class="step-dot"></span>
+        <span>Diagnostic</span>
+      </div>
+      <span class="journey-sep">›</span>
+      <div class="journey-step" id="step-regimen">
+        <span class="step-dot"></span>
+        <span>Regimen</span>
+      </div>
+    </div>
+
+    <div class="top-right-tools">
+      <button class="btn-view-toggle active" id="btn-toggle-hud">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
+        <span id="hud-toggle-text">Clinical HUD</span>
+      </button>
+      <div id="live-clock">11:20 AM</div>
+    </div>
+  </header>
+
+  <!-- ==================== AURA VIRTUAL ASSISTANT POD ==================== -->
+  <div id="aura-assistant-container">
+    <div class="aura-pod" id="aura-click-pod">
+      <div class="aura-avatar">
+        <div class="aura-eyes" id="aura-eyes">
+          <div class="aura-eye"></div>
+          <div class="aura-eye"></div>
+        </div>
+      </div>
+      <div class="aura-text-wrap">
+        <div class="aura-name-row">
+          <span class="aura-name">BSQUARE · CLINICAL CONSULTANT</span>
+          <span class="aura-status-dot"></span>
+        </div>
+        <div class="aura-dialogue" id="aura-speech">Step into the frame to activate your DermaCLIP clinical consultation.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== NO FACE DETECTED NOTICE ==================== -->
+  <div id="no-face-notice">
+    <div class="notice-icon-circle">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+    <div>
+      <div class="notice-title">Position Face in Mirror</div>
+      <div class="notice-desc">Step into the center frame to resume live DermaCLIP diagnostic</div>
+    </div>
+  </div>
+
+  <!-- ==================== CAMERA FEED LAYER ==================== -->
+  <video id="camera-feed" autoplay muted playsinline></video>
+  <div class="mirror-ambient-frame"></div>
+
+  <!-- ==================== MESH & 15 DYNAMIC POINTS (3 PER FILTER) ==================== -->
+  <svg id="face-svg">
+    <defs>
+      <filter id="pointHalo" x="-100%" y="-100%" width="300%" height="300%">
+        <feGaussianBlur stdDeviation="3.2" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- Subtle Face Mesh connections -->
+    <g class="mesh-subtle" id="mesh-lines-layer"></g>
+    <!-- 15 Condition Points -->
+    <g id="condition-points-layer"></g>
+    <!-- Active Condition Spotlight Reticle Layer -->
+    <g id="spotlight-reticle-layer"></g>
+  </svg>
+
+  <!-- SVG Tracking Lines connecting left cards to face points -->
+  <svg id="connector-svg"></svg>
+
+  <!-- ==================== STANDBY SCREEN (LUXURY MIRROR) ==================== -->
+  <div id="standby-screen">
+    <div class="standby-avatar-orb" id="btn-start-orb">
+      <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </div>
+    <h1 class="standby-head">Clinical Skin Analysis Mirror</h1>
+    <p class="standby-desc">Experience real-time AI perception and dermatological diagnostics guided by BSquare and DermaCLIP ViT-L vision models.</p>
+    <button class="btn-start-action" id="btn-start-cam">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7 16 12 23 17z"/><rect width="15" height="14" x="1" y="5" rx="2" ry="2"/></svg>
+      Start Mirror Consultation
+    </button>
+  </div>
+
+  <!-- Camera Stop Button -->
+  <button id="btn-stop-camera">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+    Stop Mirror
+  </button>
+
+  <!-- ==================== LEFT PANEL: 5 INTERACTIVE CONDITIONS ==================== -->
+  <div id="left-panel">
+
+    <!-- 1. Pores & Texture (Emerald Green) -->
+    <div class="glass-card condition-card" id="card-pores" data-condition="pores" style="border-left: 3px solid var(--c-pores);">
+      <div class="cond-header">
+        <span class="cond-label" style="color: var(--c-pores);">
+          <span class="cond-indicator" style="background: var(--c-pores); color: var(--c-pores);"></span>
+          Pores &amp; Texture
+        </span>
+        <span class="cond-value" id="val-pores" style="color: var(--c-pores);">…</span>
+      </div>
+      <div class="cond-footer">
+        <span class="cond-note" id="note-pores">Scanning follicles…</span>
+        <span class="cond-badge" id="badge-pores" style="background: rgba(0,255,127,.14); color: var(--c-pores);">LOW</span>
+      </div>
+      <span class="card-anchor" id="anchor-pores" style="background: var(--c-pores); box-shadow: 0 0 8px var(--c-pores);"></span>
+    </div>
+
+    <!-- 2. Rhytides & Wrinkles (Electric Cyan) -->
+    <div class="glass-card condition-card" id="card-wrinkles" data-condition="wrinkles" style="border-left: 3px solid var(--c-wrinkles);">
+      <div class="cond-header">
+        <span class="cond-label" style="color: var(--c-wrinkles);">
+          <span class="cond-indicator" style="background: var(--c-wrinkles); color: var(--c-wrinkles);"></span>
+          Rhytides &amp; Lines
+        </span>
+        <span class="cond-value" id="val-wrinkles" style="color: var(--c-wrinkles);">…</span>
+      </div>
+      <div class="cond-footer">
+        <span class="cond-note" id="note-wrinkles">Scanning micro-creases…</span>
+        <span class="cond-badge" id="badge-wrinkles" style="background: rgba(0,213,255,.14); color: var(--c-wrinkles);">LOW</span>
+      </div>
+      <span class="card-anchor" id="anchor-wrinkles" style="background: var(--c-wrinkles); box-shadow: 0 0 8px var(--c-wrinkles);"></span>
+    </div>
+
+    <!-- 3. Active Blemishes / Acne (Crimson Red) -->
+    <div class="glass-card condition-card" id="card-acne" data-condition="acne" style="border-left: 3px solid var(--c-acne);">
+      <div class="cond-header">
+        <span class="cond-label" style="color: var(--c-acne);">
+          <span class="cond-indicator" style="background: var(--c-acne); color: var(--c-acne);"></span>
+          Active Blemishes
+        </span>
+        <span class="cond-value" id="val-acne" style="color: var(--c-acne);">…</span>
+      </div>
+      <div class="cond-footer">
+        <span class="cond-note" id="note-acne">Scanning comedones…</span>
+        <span class="cond-badge" id="badge-acne" style="background: rgba(255,32,54,.14); color: var(--c-acne);">LOW</span>
+      </div>
+      <span class="card-anchor" id="anchor-acne" style="background: var(--c-acne); box-shadow: 0 0 8px var(--c-acne);"></span>
+    </div>
+
+    <!-- 4. Periorbital Dark Circles (Magenta) -->
+    <div class="glass-card condition-card" id="card-dark_circles" data-condition="dark_circles" style="border-left: 3px solid var(--c-dark);">
+      <div class="cond-header">
+        <span class="cond-label" style="color: var(--c-dark);">
+          <span class="cond-indicator" style="background: var(--c-dark); color: var(--c-dark);"></span>
+          Dark Circles
+        </span>
+        <span class="cond-value" id="val-dark_circles" style="color: var(--c-dark);">…</span>
+      </div>
+      <div class="cond-footer">
+        <span class="cond-note" id="note-dark_circles">Scanning infraorbital…</span>
+        <span class="cond-badge" id="badge-dark_circles" style="background: rgba(224,64,251,.14); color: var(--c-dark);">LOW</span>
+      </div>
+      <span class="card-anchor" id="anchor-dark_circles" style="background: var(--c-dark); box-shadow: 0 0 8px var(--c-dark);"></span>
+    </div>
+
+    <!-- 5. Hyperpigmentation (Amber Orange) -->
+    <div class="glass-card condition-card" id="card-pigmentation" data-condition="pigmentation" style="border-left: 3px solid var(--c-pigment);">
+      <div class="cond-header">
+        <span class="cond-label" style="color: var(--c-pigment);">
+          <span class="cond-indicator" style="background: var(--c-pigment); color: var(--c-pigment);"></span>
+          Hyperpigmentation
+        </span>
+        <span class="cond-value" id="val-pigmentation" style="color: var(--c-pigment);">…</span>
+      </div>
+      <div class="cond-footer">
+        <span class="cond-note" id="note-pigmentation">Scanning melanin…</span>
+        <span class="cond-badge" id="badge-pigmentation" style="background: rgba(255,160,0,.14); color: var(--c-pigment);">LOW</span>
+      </div>
+      <span class="card-anchor" id="anchor-pigmentation" style="background: var(--c-pigment); box-shadow: 0 0 8px var(--c-pigment);"></span>
+    </div>
+
+    <!-- Reset Focus Bar -->
+    <div id="focus-reset-bar">
+      <button class="btn-reset-focus" id="btn-reset-focus">✕ Reset Spotlight (Show All)</button>
+    </div>
+
+  </div>
+
+  <!-- ==================== RIGHT PANEL: ESSENTIAL SUMMARY & SUGGESTIONS ==================== -->
+  <div id="right-panel">
+
+    <!-- Overall Barrier Score -->
+    <div class="glass-card health-gauge-card">
+      <div class="card-title-row">
+        <span class="card-title">Barrier Health Index</span>
+        <span class="rec-pill-live" id="derma-state-pill">Awaiting Scan</span>
+      </div>
+      <div id="score-ring">
+        <div class="score-inner">
+          <span id="score-number">—</span>
+          <span class="score-denom">/ 100</span>
+        </div>
+      </div>
+      <div id="health-label">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 19.09c-.48.67.15 1.5.93 1.26A5.76 5.76 0 0 0 9 18h.5c.5 0 1-.32 1.3-.8l1.5-2.37A6.9 6.9 0 0 1 17 13c3 0 5-2 5-5-2 0-3.5.5-5 2.5V8Z"/></svg>
+        <span id="health-text">Optimal Barrier Integrity</span>
+      </div>
+    </div>
+
+    <!-- Diagnostic Profile -->
+    <div class="glass-card profile-card">
+      <div class="card-title-row">
+        <span class="card-title">Patient Profile</span>
+      </div>
+      <div class="profile-row">
+        <span class="p-label">Skin Type</span>
+        <span class="p-val" id="prof-type">Combination</span>
+      </div>
+      <div class="profile-row">
+        <span class="p-label">Hydration</span>
+        <span class="p-val" id="prof-hydration">Moderate</span>
+      </div>
+      <div class="profile-row">
+        <span class="p-label">Sensitivity</span>
+        <span class="p-val" id="prof-sensitivity">Low</span>
+      </div>
+    </div>
+
+    <!-- Dynamic Clinical Suggestions & Recommendations Card -->
+    <div class="glass-card recommendations-card" id="card-recommendations">
+      <div class="card-header-flex">
+        <span class="card-title">Clinical Formulations</span>
+        <span class="rec-pill-live" id="rec-status-tag">DERMACLIP MATCH</span>
+      </div>
+      <div class="recommendation-list" id="recommendations-container">
+        <div class="rec-placeholder">Start mirror to match active formulations…</div>
+      </div>
+      <button class="btn-open-protocol" id="btn-open-protocol">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+        Full Routine &amp; Formulations
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Backdrop & Routine Popover Modal -->
+  <div id="routine-backdrop"></div>
+  <div id="routine-popover" class="routine-modal">
+    <div class="routine-modal-header">
+      <div>
+        <h3>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-rose)" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          Personalized Skincare Suggestions
+        </h3>
+        <p class="routine-subtitle">Evidence-based clinical formulation driven by live DermaCLIP diagnostic</p>
+      </div>
+      <button class="routine-close" id="btn-close-routine">×</button>
+    </div>
+    <div class="routine-modal-body" id="routine-modal-body">
+      <div class="rec-placeholder">Activating DermaCLIP vision diagnostic…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script type="module">
+// Tab-specific isolated session ID using sessionStorage (unique per browser tab)
+let sessionId = sessionStorage.getItem('dermaclip_session_id');
+if (!sessionId) {
+  sessionId = 'sess_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+  sessionStorage.setItem('dermaclip_session_id', sessionId);
+}
+console.log('[DermaCLIP] Active tab session ID:', sessionId);
+
+const API_BASE = (window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null')
+  ? 'http://localhost:8081'
+  : window.location.origin;
+const WS_URL = API_BASE.replace(/^http/, 'ws') + '/ws/frame?session_id=' + encodeURIComponent(sessionId);
+
+// 5 DISTINCT CONDITION SPECIFICATIONS
+const CONDITION_SPECS = {
+  pores: {
+    name: "Pores & Texture",
+    color: '#00FF7F',
+    glow: 'rgba(0, 255, 127, 0.65)',
+    defaultIndices: [4, 197, 206],
+    anchorIndex: 4,
+    insight: "Follicular micro-roughness detected along the T-zone and nasal dorsum. 5% Niacinamide recommended to refine lipid excretion."
+  },
+  wrinkles: {
+    name: "Rhytides & Lines",
+    color: '#00D5FF',
+    glow: 'rgba(0, 213, 255, 0.65)',
+    defaultIndices: [10, 67, 297],
+    anchorIndex: 10,
+    insight: "Superficial epidermal micro-creases analyzed across forehead and periorbital margins. Retinaldehyde 0.05% recommended."
+  },
+  acne: {
+    name: "Active Blemishes",
+    color: '#FF2036',
+    glow: 'rgba(255, 32, 54, 0.65)',
+    defaultIndices: [50, 280, 152],
+    anchorIndex: 50,
+    insight: "Active blemish activity identified on lateral cheeks and chin. 2% Salicylic Clarifier (BHA) recommended for pore desquamation."
+  },
+  dark_circles: {
+    name: "Dark Circles",
+    color: '#E040FB',
+    glow: 'rgba(224, 64, 251, 0.65)',
+    defaultIndices: [159, 386, 145],
+    anchorIndex: 159,
+    insight: "Infraorbital venous micro-vascular congestion observed. Caffeine 5% + EGCG solution recommended to decongest the periorbital area."
+  },
+  pigmentation: {
+    name: "Hyperpigmentation",
+    color: '#FFA000',
+    glow: 'rgba(255, 160, 0, 0.65)',
+    defaultIndices: [116, 345, 234],
+    anchorIndex: 345,
+    insight: "Epidermal melanin clusters detected on the zygomatic arches. 10% Tranexamic Acid and Vitamin C recommended to inhibit tyrosinase."
+  }
+};
+
+let cameraActive = false;
+let dermaclipReady = false;
+let hudEnabled = true;
+let focusedCondition = null; // null = show all
+let focusedPointId = null;   // null = show all; e.g. 'pores-0', 'acne-1'
+let mediaStream = null;
+let animLoopId = null;
+let ws = null;
+let frameSendTimer = null;
+let faceLandmarker = null;
+let activeTopIndices = null;
+let activePrimary3Points = null;
+
+// Anatomical landmark data for single-point focus
+const POINT_ANATOMY = {
+  'pores-0': { name: "Nasal Dorsum", note: "Follicular micro-roughness & pore dilation", active: "5% Niacinamide" },
+  'pores-1': { name: "Nose Tip", note: "Sebaceous follicular enlargement", active: "5% Niacinamide + Zinc" },
+  'pores-2': { name: "Paranasal Margin", note: "T-zone epidermal roughness", active: "Gentle LHA/PHA Exfoliant" },
+  'wrinkles-0': { name: "Upper Forehead", note: "Frontalis expression micro-creases", active: "Retinaldehyde 0.05%" },
+  'wrinkles-1': { name: "Left Glabella", note: "Corrugator tension line", active: "Copper Tripeptide-1" },
+  'wrinkles-2': { name: "Right Glabella", note: "Supraorbital micro-wrinkle", active: "Argireline Complex" },
+  'acne-0': { name: "Left Cheek", note: "Papular blemish congestion", active: "2% Salicylic Clarifier (BHA)" },
+  'acne-1': { name: "Right Cheek", note: "Lateral comedonal cluster", active: "2% Salicylic Acid + Zinc PCA" },
+  'acne-2': { name: "Mental / Chin", note: "Hormonal follicular inflammation", active: "Encapsulated Azelaic Acid" },
+  'dark_circles-0': { name: "Left Infraorbital", note: "Periorbital venous pooling & shadow", active: "5% Caffeine + EGCG" },
+  'dark_circles-1': { name: "Right Infraorbital", note: "Sub-ocular vascular congestion", active: "5% Caffeine + Vitamin K" },
+  'dark_circles-2': { name: "Tear Trough", note: "Micro-vascular volume shadow", active: "Multi-Molecular Hyaluronic Gel" },
+  'pigmentation-0': { name: "Left Zygomatic Arch", note: "Epidermal melanin cluster / sun spot", active: "10% Tranexamic Acid" },
+  'pigmentation-1': { name: "Right Zygomatic Arch", note: "Solar lentigo / localized pigment", active: "15% Vitamin C (L-Ascorbic)" },
+  'pigmentation-2': { name: "Temporal Crest", note: "UV-induced hyperpigmentation", active: "Mineral SPF 50+ Broad-Spectrum" }
+};
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('live-clock').textContent =
+    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ============================================================
+// AUDIO FEEDBACK (Synthesized Chimes - Zero External Assets)
+// ============================================================
+let audioCtx = null;
+function playChime(type = 'ping') {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    if (type === 'focus') {
+      osc.frequency.setValueAtTime(540, now);
+      osc.frequency.exponentialRampToValueAtTime(820, now + 0.12);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } else if (type === 'scanComplete') {
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.setValueAtTime(660, now + 0.08);
+      osc.frequency.setValueAtTime(880, now + 0.16);
+      gain.gain.setValueAtTime(0.09, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    }
+  } catch (e) {}
+}
+
+// ============================================================
+// AURA ASSISTANT DIALOGUE & EXPRESSIONS
+// ============================================================
+function setAuraSpeech(text, mood = 'neutral') {
+  const el = document.getElementById('aura-speech');
+  if (el) {
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.textContent = text;
+      el.style.opacity = '1';
+    }, 120);
+  }
+}
+
+// Interactive Condition Spotlighting (Card Click)
+function setFocusedCondition(condKey) {
+  playChime('focus');
+  focusedPointId = null; // Clear single point focus
+  if (focusedCondition === condKey) {
+    focusedCondition = null;
+  } else {
+    focusedCondition = condKey;
+  }
+  updateFocusUI();
+}
+
+// Interactive Single Point Spotlighting (Clicking a Point directly on the face)
+function focusSinglePoint(ptId, condKey, idx) {
+  playChime('focus');
+  if (focusedPointId === ptId) {
+    focusedPointId = null;
+    focusedCondition = null;
+  } else {
+    focusedPointId = ptId;
+    focusedCondition = condKey;
+  }
+  updateFocusUI(idx);
+}
+
+function updateFocusUI(idx = null) {
+  // Update left card styles
+  document.querySelectorAll('.condition-card').forEach(card => {
+    const cId = card.getAttribute('data-condition');
+    if (!focusedCondition) {
+      card.classList.remove('active-focus', 'dimmed');
+    } else if (cId === focusedCondition) {
+      card.classList.add('active-focus');
+      card.classList.remove('dimmed');
+    } else {
+      card.classList.remove('active-focus');
+      card.classList.add('dimmed');
+    }
+  });
+
+  const resetBar = document.getElementById('focus-reset-bar');
+  const resetBtn = document.getElementById('btn-reset-focus');
+
+  if (focusedPointId) {
+    resetBar.style.display = 'block';
+    resetBtn.textContent = '✕ Reset Point Focus (Show All)';
+    const info = POINT_ANATOMY[focusedPointId] || { name: "Facial Landmark", note: "Diagnostic micro-zone", active: "Target Active" };
+    setAuraSpeech(`Focusing on point (${info.name}): ${info.note}. Matched Active: ${info.active}.`);
+  } else if (focusedCondition) {
+    resetBar.style.display = 'block';
+    resetBtn.textContent = '✕ Reset Condition Spotlight (Show All)';
+    const spec = CONDITION_SPECS[focusedCondition];
+    setAuraSpeech(`Spotlighting ${spec.name}: ${spec.insight}`);
+  } else {
+    resetBar.style.display = 'none';
+    setAuraSpeech("Diagnostic complete. All condition points mapped across your face. Tap any condition or point to focus.");
+  }
+}
+
+// Wire condition card clicks for interactive spotlighting
+document.querySelectorAll('.condition-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const cId = card.getAttribute('data-condition');
+    if (cId) setFocusedCondition(cId);
+  });
+});
+
+document.getElementById('btn-reset-focus').addEventListener('click', () => {
+  focusedPointId = null;
+  focusedCondition = null;
+  updateFocusUI();
+});
+
+// HUD View Toggle
+const hudBtn = document.getElementById('btn-toggle-hud');
+hudBtn.addEventListener('click', () => {
+  hudEnabled = !hudEnabled;
+  if (hudEnabled) {
+    hudBtn.classList.add('active');
+    document.getElementById('hud-toggle-text').textContent = 'Clinical HUD';
+    document.getElementById('face-svg').style.opacity = '1';
+    document.getElementById('connector-svg').style.opacity = '1';
+    setAuraSpeech("Clinical HUD active: showing anatomical face tracking and condition landmarks.");
+  } else {
+    hudBtn.classList.remove('active');
+    document.getElementById('hud-toggle-text').textContent = 'Natural Mirror';
+    document.getElementById('face-svg').style.opacity = '0';
+    document.getElementById('connector-svg').style.opacity = '0';
+    setAuraSpeech("Natural Mirror mode: viewing your clear reflection with ambient illumination.");
+  }
+});
+
+// Journey Tracker Step updater
+function setJourneyStep(stepName) {
+  const steps = ['perceive', 'scan', 'mapping', 'regimen'];
+  const curIdx = steps.indexOf(stepName);
+  steps.forEach((s, idx) => {
+    const el = document.getElementById(`step-${s}`);
+    if (!el) return;
+    if (idx < curIdx) {
+      el.className = 'journey-step done';
+    } else if (idx === curIdx) {
+      el.className = 'journey-step active';
+    } else {
+      el.className = 'journey-step';
+    }
+  });
+}
+
+// ============================================================
+// API POLLING & SCORING
+// ============================================================
+let pollTimer = null;
+async function fetchScores() {
+  if (!cameraActive) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/scores?session_id=${encodeURIComponent(sessionId)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    renderScores(data);
+  } catch (e) {} finally {
+    if (cameraActive) {
+      // Fast polling (400ms) during initial scanning; steady 1000ms once diagnostic is live
+      const nextDelay = dermaclipReady ? 1000 : 400;
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(fetchScores, nextDelay);
+    }
+  }
+}
+
+let hasAnnouncedScanComplete = false;
+
+function renderScores(data) {
+  if (!data || !cameraActive) return;
+
+  if (data.top_indices) {
+    activeTopIndices = data.top_indices;
+  }
+  if (data.primary_3_points) {
+    activePrimary3Points = data.primary_3_points;
+  }
+
+  const dermaPill = document.getElementById('derma-state-pill');
+
+  if (!data.has_inference) {
+    dermaclipReady = false;
+    setJourneyStep('scan');
+    dermaPill.textContent = 'SCANNING…';
+    dermaPill.style.color = '#38bdf8';
+    setAuraSpeech("Aligning facial landmarks… DermaCLIP is assessing stratum corneum and micro-texture.");
+  } else {
+    if (!dermaclipReady) {
+      // First time transition!
+      dermaclipReady = true;
+      playChime('scanComplete');
+      setJourneyStep('mapping');
+      if (!hasAnnouncedScanComplete) {
+        hasAnnouncedScanComplete = true;
+        setAuraSpeech(`Diagnostic complete! Overall Barrier Health index is ${Math.round(data.score || 75)}%. Tap any condition to focus.`);
+      }
+    }
+
+    if (data.scoring_active) {
+      dermaPill.textContent = 'INFERRING…';
+      dermaPill.style.color = '#38bdf8';
+    } else {
+      dermaPill.textContent = `LIVE · ${data.score_countdown || 3}s`;
+      dermaPill.style.color = 'var(--c-mint)';
+      setJourneyStep('regimen');
+    }
+  }
+
+  if (data.has_inference && data.metrics) {
+    // Health Score Ring
+    const scoreVal = data.score || 0;
+    document.getElementById('score-number').textContent = Math.round(scoreVal);
+    const deg = Math.min(360, Math.round(scoreVal * 3.6));
+    document.getElementById('score-ring').style.setProperty('--score-deg', `${deg}deg`);
+    document.getElementById('health-text').textContent = data.status || 'Optimal Barrier Integrity';
+
+    // Profile
+    document.getElementById('prof-type').textContent = data.skin_type || 'Combination';
+    document.getElementById('prof-hydration').textContent = data.hydration || 'Moderate';
+    document.getElementById('prof-sensitivity').textContent = data.acne_severity || 'Low';
+
+    // Update 5 condition cards
+    for (const m of data.metrics) {
+      const valEl = document.getElementById(`val-${m.id}`);
+      const noteEl = document.getElementById(`note-${m.id}`);
+      const badgeEl = document.getElementById(`badge-${m.id}`);
+
+      if (valEl) valEl.textContent = `${m.score}%`;
+      if (noteEl) noteEl.textContent = m.note;
+      if (badgeEl) {
+        badgeEl.textContent = m.severity;
+        badgeEl.style.color = m.color;
+        badgeEl.style.background = m.glow || 'rgba(255,255,255,0.14)';
+      }
+    }
+
+    // Render Clinical Suggestions in Right Rail
+    if (data.recommendations && data.recommendations.length > 0) {
+      renderRecommendationsList(data.recommendations);
+    }
+
+    // Render Full Protocol in Modal
+    if (data.recommendation_text) {
+      renderRoutineModal(data.recommendation_text);
+    }
+  }
+}
+
+function renderRecommendationsList(items) {
+  const container = document.getElementById('recommendations-container');
+  if (!container) return;
+
+  container.innerHTML = items.map(r => {
+    let iconSvg = '';
+    if (r.icon === 'droplets') {
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>`;
+    } else if (r.icon === 'sun') {
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
+    } else if (r.icon === 'moon') {
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+    } else {
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2v7.31"/><path d="M14 9.3V2"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/></svg>`;
+    }
+
+    return `
+      <div class="rec-item">
+        <div class="rec-icon-box">${iconSvg}</div>
+        <div class="rec-info">
+          <div class="rec-name-row">
+            <span class="rec-name">${escapeText(r.name)}</span>
+            <span class="rec-timing">${escapeText(r.timing)}</span>
+          </div>
+          <span class="rec-active">${escapeText(r.active)}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderRoutineModal(rawText) {
+  const body = document.getElementById('routine-modal-body');
+  if (!body) return;
+
+  const sections = rawText.split(/(?=###\s+)/g).filter(s => s.trim().length > 0);
+  if (sections.length === 0) {
+    body.innerHTML = `<div class="protocol-section"><p>${escapeText(rawText)}</p></div>`;
+    return;
+  }
+
+  let html = '';
+  for (const sec of sections) {
+    const lines = sec.trim().split('\n');
+    const headerLine = lines[0].replace(/^###\s*/, '').trim();
+    const contentLines = lines.slice(1).join('\n').trim();
+
+    let icon = '✦';
+    if (/ASSESSMENT|EVALUATION/i.test(headerLine)) icon = '🩺';
+    else if (/MORNING/i.test(headerLine)) icon = '☀️';
+    else if (/EVENING|NIGHT/i.test(headerLine)) icon = '🌙';
+    else if (/HERO|ACTIVE|FORMULATION/i.test(headerLine)) icon = '🔬';
+    else if (/DIRECTIVE|ORDER/i.test(headerLine)) icon = '📋';
+
+    let formattedContent = contentLines
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/^(\d+\.\s+)(.+)$/gm, '<div style="margin: 4px 0 4px 6px;"><b>$1</b> $2</div>')
+      .replace(/^(\*\s+)(.+)$/gm, '<div style="margin: 4px 0 4px 6px;">• $2</div>');
+
+    html += `
+      <div class="protocol-section">
+        <h4><span>${icon}</span> ${escapeText(headerLine)}</h4>
+        <div style="font-size: 12.5px; line-height: 1.6;">${formattedContent}</div>
+      </div>
+    `;
+  }
+  body.innerHTML = html;
+}
+
+function escapeText(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[m]);
+}
+
+// Modal Toggle Handlers
+function openRoutineModal() {
+  document.getElementById('routine-backdrop').classList.add('open');
+  document.getElementById('routine-popover').classList.add('open');
+  playChime('focus');
+}
+function closeRoutineModal() {
+  document.getElementById('routine-backdrop').classList.remove('open');
+  document.getElementById('routine-popover').classList.remove('open');
+}
+
+document.getElementById('btn-open-protocol')?.addEventListener('click', openRoutineModal);
+document.getElementById('btn-close-routine')?.addEventListener('click', closeRoutineModal);
+document.getElementById('routine-backdrop')?.addEventListener('click', closeRoutineModal);
+
+// ============================================================
+// WEBSOCKET FRAME STREAMING TO PYTHON
+// ============================================================
+const offscreenCanvas = document.createElement('canvas');
+
+function connectWS() {
+  if (ws && ws.readyState === WebSocket.OPEN) return;
+  try {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = () => {
+      // Send initial frame immediately on socket connection
+      sendFrameToBackend();
+    };
+    ws.onclose = () => { ws = null; if (cameraActive) setTimeout(connectWS, 1500); };
+    ws.onerror = () => {};
+  } catch (e) {}
+}
+
+function sendFrameToBackend() {
+  const video = document.getElementById('camera-feed');
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  if (!video || video.readyState < 2 || !video.videoWidth) return;
+
+  const targetW = Math.min(video.videoWidth, 640);
+  const targetH = Math.round(video.videoHeight * (targetW / video.videoWidth));
+  offscreenCanvas.width  = targetW;
+  offscreenCanvas.height = targetH;
+  const ctx = offscreenCanvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, targetW, targetH);
+
+  offscreenCanvas.toBlob(blob => {
+    if (!blob || !ws || ws.readyState !== WebSocket.OPEN) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const b64 = reader.result.split(',')[1];
+      try { ws.send(b64); } catch (e) {}
+    };
+    reader.readAsDataURL(blob);
+  }, 'image/jpeg', 0.62);
+}
+
+// ============================================================
+// CAMERA LIFECYCLE (START ONLY WHEN CAM ON)
+// ============================================================
+document.getElementById('btn-start-cam').addEventListener('click', startCamera);
+document.getElementById('btn-start-orb').addEventListener('click', startCamera);
+document.getElementById('btn-stop-camera').addEventListener('click', stopCamera);
+
+async function startCamera() {
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    const video = document.getElementById('camera-feed');
+    video.srcObject = mediaStream;
+    await video.play();
+
+    cameraActive = true;
+    dermaclipReady = false;
+    hasAnnouncedScanComplete = false;
+    focusedCondition = null;
+
+    document.body.classList.add('camera-active');
+    video.classList.add('active');
+    document.getElementById('standby-screen').classList.add('hidden');
+    document.getElementById('btn-stop-camera').style.display = 'inline-flex';
+
+    setJourneyStep('perceive');
+    setAuraSpeech("Perceiving face alignment… Keep your face centered in the mirror.");
+
+    // Clear points and reset scores while scanning
+    document.getElementById('condition-points-layer').innerHTML = '';
+    document.getElementById('connector-svg').innerHTML = '';
+    ['pores', 'wrinkles', 'acne', 'dark_circles', 'pigmentation'].forEach(id => {
+      const v = document.getElementById(`val-${id}`);
+      if (v) v.textContent = '…';
+    });
+
+    connectWS();
+    frameSendTimer = setInterval(sendFrameToBackend, 450); // 2.2 FPS to Python backend
+
+    startMeshTracking();
+    fetchScores();
+  } catch (err) {
+    alert('Camera permission denied or camera not found.');
+  }
+}
+
+function stopCamera() {
+  cameraActive = false;
+  dermaclipReady = false;
+  hasAnnouncedScanComplete = false;
+  focusedCondition = null;
+
+  if (animLoopId) { cancelAnimationFrame(animLoopId); animLoopId = null; }
+  if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+  mediaStream?.getTracks().forEach(t => t.stop());
+  mediaStream = null;
+  clearInterval(frameSendTimer);
+  ws?.close();
+
+  const video = document.getElementById('camera-feed');
+  video.srcObject = null;
+  video.classList.remove('active');
+
+  document.body.classList.remove('camera-active');
+  document.getElementById('standby-screen').classList.remove('hidden');
+  document.getElementById('btn-stop-camera').style.display = 'none';
+  document.getElementById('face-svg').style.display = 'none';
+  document.getElementById('no-face-notice').style.display = 'none';
+  document.getElementById('condition-points-layer').innerHTML = '';
+  document.getElementById('connector-svg').innerHTML = '';
+  closeRoutineModal();
+
+  setJourneyStep('perceive');
+  setAuraSpeech("Step into the frame to activate your DermaCLIP clinical consultation.");
+
+  document.getElementById('recommendations-container').innerHTML =
+    '<div class="rec-placeholder">Start mirror to match active formulations…</div>';
+
+  document.getElementById('derma-state-pill').textContent = 'STANDBY';
+  document.getElementById('derma-state-pill').style.color = 'var(--muted)';
+}
+
+// ============================================================
+// MEDIAPIPE MESH & DYNAMIC 15 CONDITION POINTS
+// ============================================================
+async function initMediaPipeVision() {
+  if (faceLandmarker) return faceLandmarker;
+  try {
+    const { FaceLandmarker, FilesetResolver } = await import(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs'
+    );
+    const vision = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+    );
+    faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+        delegate: 'GPU'
+      },
+      runningMode: 'VIDEO',
+      numFaces: 1,
+      outputFaceBlendshapes: false,
+      outputFacialTransformationMatrixes: false
+    });
+    faceLandmarker._FLClass = FaceLandmarker;
+    return faceLandmarker;
+  } catch (e) {
+    console.warn('[MediaPipe] Init error:', e);
+    return null;
+  }
+}
+
+let lastMeshTime = 0;
+const MESH_INTERVAL = 1000 / 22; // 22 FPS for butter-smooth tracking
+
+function startMeshTracking() {
+  initMediaPipeVision().then(tracker => {
+    if (!tracker) return;
+
+    function loop(ts) {
+      if (!cameraActive) return;
+
+      if (ts - lastMeshTime >= MESH_INTERVAL) {
+        lastMeshTime = ts;
+        const video = document.getElementById('camera-feed');
+        if (video && video.readyState >= 2 && video.videoWidth > 0) {
+          try {
+            const results = tracker.detectForVideo(video, performance.now());
+            const hasFace = (results?.faceLandmarks?.length > 0);
+            const noticeEl = document.getElementById('no-face-notice');
+
+            if (hasFace) {
+              if (noticeEl) noticeEl.style.display = 'none';
+              drawPointsAndConnectors(results.faceLandmarks[0], tracker._FLClass, video);
+            } else {
+              if (noticeEl && cameraActive) noticeEl.style.display = 'flex';
+              document.getElementById('face-svg').style.display = 'none';
+              document.getElementById('connector-svg').innerHTML = '';
+            }
+          } catch (e) {}
+        }
+      }
+
+      animLoopId = requestAnimationFrame(loop);
+    }
+
+    animLoopId = requestAnimationFrame(loop);
+  });
+}
+
+/**
+ * Draws VERY CLEAR 3 points per filter in distinct clinical colors
+ * Handles interactive spotlighting and connectors.
+ */
+function drawPointsAndConnectors(landmarks, FLClass, video) {
+  const svg = document.getElementById('face-svg');
+  const linesGroup = document.getElementById('mesh-lines-layer');
+  const pointsGroup = document.getElementById('condition-points-layer');
+  const reticleGroup = document.getElementById('spotlight-reticle-layer');
+  const connSvg = document.getElementById('connector-svg');
+
+  const vw = video.videoWidth || 1;
+  const vh = video.videoHeight || 1;
+
+  svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+  svg.style.display = hudEnabled ? 'block' : 'none';
+
+  // 1. Draw subtle mesh lines
+  const conns = FLClass.FACE_LANDMARKS_TESSELATION;
+  let meshStr = '';
+  for (let i = 0; i < conns.length; i += 3) {
+    const c = conns[i];
+    const s = landmarks[c.start];
+    const e = landmarks[c.end];
+    if (s && e) {
+      meshStr += `<line x1="${(s.x * vw).toFixed(1)}" y1="${(s.y * vh).toFixed(1)}" x2="${(e.x * vw).toFixed(1)}" y2="${(e.y * vh).toFixed(1)}"/>`;
+    }
+  }
+  linesGroup.innerHTML = meshStr;
+
+  // POINTS SHOW UP ONLY AFTER DERMACLIP INFERENCE HAS COMPLETED!
+  if (!dermaclipReady) {
+    pointsGroup.innerHTML = '';
+    reticleGroup.innerHTML = '';
+    connSvg.innerHTML = '';
+    return;
+  }
+
+  // 2. Render condition points across ALL conditions after inference
+  // If a condition or point is selected: that selection is HIGHLIGHTED with reticle & glow, others dimmed
+  // In overview (default after scanning): ALL points are visible across all 5 conditions!
+  let ptsStr = '';
+  let reticleStr = '';
+  const screenAnchors = {};
+  const videoRect = video.getBoundingClientRect();
+
+  for (const [key, spec] of Object.entries(CONDITION_SPECS)) {
+    const indices = (activeTopIndices && activeTopIndices[key])
+      ? activeTopIndices[key]
+      : spec.defaultIndices;
+
+    for (let i = 0; i < indices.length; i++) {
+      const lm = landmarks[indices[i]];
+      if (!lm) continue;
+
+      const ptId = `${key}-${i}`;
+      const px = lm.x * vw;
+      const py = lm.y * vh;
+
+      // Determine single-point vs condition-level focus
+      let isTargeted = false;
+      let opacityFactor = 1.0;
+
+      if (focusedPointId !== null) {
+        if (focusedPointId === ptId) {
+          isTargeted = true;
+          opacityFactor = 1.0;
+        } else {
+          opacityFactor = 0.18; // Dim non-targeted points
+        }
+      } else if (focusedCondition !== null) {
+        if (focusedCondition === key) {
+          opacityFactor = 1.0;
+          if (i === 0) isTargeted = true;
+        } else {
+          opacityFactor = 0.18; // Dim non-spotlighted conditions
+        }
+      } else {
+        // Overview mode (after scanning): ALL points across all conditions visible!
+        opacityFactor = (i === 0) ? 1.0 : 0.85;
+      }
+
+      // Anchor connector line to this condition's primary point (or targeted point)
+      if (isTargeted || (i === 0 && (focusedCondition === null || focusedCondition === key))) {
+        const sx = videoRect.left + (1 - lm.x) * videoRect.width;
+        const sy = videoRect.top + lm.y * videoRect.height;
+        if (!screenAnchors[key] || isTargeted) {
+          screenAnchors[key] = { x: sx, y: sy };
+        }
+      }
+
+      // Render pulsing spotlight reticle and anatomical label on focused point
+      if (isTargeted) {
+        const info = POINT_ANATOMY[ptId] || { name: spec.name };
+        reticleStr += `
+          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="22" fill="none"
+                  stroke="${spec.color}" stroke-width="2.5" class="spotlight-ring" />
+          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="32" fill="none"
+                  stroke="${spec.color}" stroke-width="1.2" stroke-dasharray="4, 4" opacity="0.85"/>
+          <g transform="translate(${(px - 60).toFixed(1)}, ${(py - 38).toFixed(1)})" pointer-events="none">
+            <rect width="120" height="20" rx="5" fill="rgba(20,15,19,0.88)" stroke="${spec.color}" stroke-width="1"/>
+            <text x="60" y="14" fill="${spec.color}" font-size="9.5" font-weight="700" text-anchor="middle" letter-spacing="0.4">${escapeText(info.name.toUpperCase())}</text>
+          </g>
+        `;
+      }
+
+      // Condition Point (with generous hit-area for clicking)
+      ptsStr += `
+        <g class="condition-point-item" data-point-id="${ptId}" data-cond="${key}" data-idx="${i}"
+           stroke="${spec.color}" opacity="${opacityFactor}" style="cursor: pointer; pointer-events: auto;">
+          <!-- Transparent Hit Target for Touch / Mouse -->
+          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="22" fill="transparent" stroke="none" pointer-events="all"/>
+          <!-- Outer Pulsing Halo -->
+          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${isTargeted ? 18 : 13}"
+                  fill="${spec.glow}" stroke="none" opacity="${isTargeted ? 0.85 : 0.55}" filter="url(#pointHalo)"/>
+          <!-- Intermediate Solid Ring -->
+          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${isTargeted ? 10 : 7.5}"
+                  fill="${spec.color}" fill-opacity="0.35" stroke="${spec.color}" stroke-width="${isTargeted ? 3.0 : 2.0}"/>
+          <!-- Crisp Center Core -->
+          <circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${isTargeted ? 5.5 : 4.5}"
+                  fill="${spec.color}" stroke="none"/>
+          <!-- Specular Highlight -->
+          <circle cx="${(px - 1.2).toFixed(1)}" cy="${(py - 1.2).toFixed(1)}" r="1.6"
+                  fill="#FFFFFF" stroke="none"/>
+        </g>
+      `;
+    }
+  }
+
+  pointsGroup.innerHTML = ptsStr;
+  reticleGroup.innerHTML = reticleStr;
+
+  // 3. Render clean connector lines from cards to facial points
+  if (!hudEnabled) {
+    connSvg.innerHTML = '';
+    return;
+  }
+
+  let connStr = '';
+  for (const [key, spec] of Object.entries(CONDITION_SPECS)) {
+    if (focusedCondition !== null && focusedCondition !== key) continue;
+
+    const anchorCoord = screenAnchors[key];
+    const cardAnchor = document.getElementById(`anchor-${key}`);
+    if (!anchorCoord || !cardAnchor) continue;
+
+    const cRect = cardAnchor.getBoundingClientRect();
+    const startX = cRect.left + cRect.width / 2;
+    const startY = cRect.top + cRect.height / 2;
+    const endX = anchorCoord.x;
+    const endY = anchorCoord.y;
+
+    const midX = (startX + endX) / 2;
+    const isFocused = (focusedCondition === key);
+    connStr += `
+      <path d="M ${startX.toFixed(1)} ${startY.toFixed(1)} Q ${midX.toFixed(1)} ${startY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}"
+            stroke="${spec.color}" stroke-width="${isFocused ? 2.5 : 1.6}" opacity="${focusedCondition && !isFocused ? 0.2 : 0.75}" fill="none" class="hud-line" />
+      <circle cx="${endX.toFixed(1)}" cy="${endY.toFixed(1)}" r="${isFocused ? 5 : 3.5}" fill="${spec.color}" />
+    `;
+  }
+  connSvg.innerHTML = connStr;
+}
+
+// Event Delegation for clicking directly on any facial condition point
+document.getElementById('condition-points-layer')?.addEventListener('click', (e) => {
+  const g = e.target.closest('.condition-point-item');
+  if (!g) return;
+  const ptId = g.getAttribute('data-point-id');
+  const cond = g.getAttribute('data-cond');
+  const idx = parseInt(g.getAttribute('data-idx') || '0', 10);
+  if (ptId && cond) {
+    focusSinglePoint(ptId, cond, idx);
+  }
+});
+</script>
+
+</body>
+</html>

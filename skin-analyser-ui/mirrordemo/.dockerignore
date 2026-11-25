@@ -1,0 +1,23 @@
+.git
+.gitignore
+.DS_Store
+*.log
+scratch/
+
+# Frontend development files (only dist is needed in production)
+frontend/node_modules
+frontend/src
+
+# Python cache
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache
+
+# Local secrets
+backend/.env
+
+# Large training backups (only 146MB best_macro_f1.pt is needed for inference)
+backend/models/*training*.pt
+backend/models/*backup*.pt

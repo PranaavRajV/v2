@@ -1,0 +1,22 @@
+# ============================================================
+# DermaFace CLIP Prompt Templates
+# ============================================================
+
+templates:
+  - "A face with {condition}."
+  - "A facial photograph showing {condition}."
+  - "A close-up face showing visible {condition}."
+  - "Facial skin affected by {condition}."
+  - "A facial image with visible {condition}."
+
+classes:
+  - Acne
+  - Blackheads
+  - Whiteheads
+  - Wrinkles
+  - Pigmentation
+  - Freckles
+  - Dark Circles
+  - Pores
+  - Redness
+  - Puffy Eyes

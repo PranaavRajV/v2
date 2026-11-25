@@ -34,11 +34,11 @@ WORKDIR /app
 COPY . .
 
 # Download model at build time.
-# Pass MODEL_DOWNLOAD_URL as a Docker build arg in Render/Railway.
-ARG MODEL_DOWNLOAD_URL=""
+# Pass MODEL_DOWNLOAD_URL as a Docker build arg in Render/Railway (defaults to hosted checkpoint).
+ARG MODEL_DOWNLOAD_URL="https://drive.usercontent.google.com/download?id=1sd8QNsqvKoeihHgGLHudcCFAlNZefB3C&export=download&confirm=t"
 RUN if [ -n "$MODEL_DOWNLOAD_URL" ]; then \
         echo "Downloading model from $MODEL_DOWNLOAD_URL …"; \
-        curl -L "$MODEL_DOWNLOAD_URL" -o /app/best_macro_f1.pt; \
+        curl -fL "$MODEL_DOWNLOAD_URL" -o /app/best_macro_f1.pt; \
         echo "Model downloaded: $(du -sh /app/best_macro_f1.pt)"; \
     else \
         echo "⚠ MODEL_DOWNLOAD_URL not set — model must be mounted at runtime"; \

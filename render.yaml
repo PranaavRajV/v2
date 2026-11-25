@@ -25,6 +25,8 @@ services:
         value: "8081"
       - key: MODEL_PATH
         value: "/app/best_macro_f1.pt"
+      - key: MODEL_DOWNLOAD_URL
+        value: "https://drive.usercontent.google.com/download?id=1sd8QNsqvKoeihHgGLHudcCFAlNZefB3C&export=download&confirm=t"
 
     # If you use a Render Disk to store the model file:
     # disk:
